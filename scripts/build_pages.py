@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import html
 import json
 import mimetypes
 import os
@@ -57,6 +58,36 @@ def copy_file(source: Path, target: Path) -> None:
     shutil.copy2(source, target)
 
 
+def render_text_html(source: Path, target: Path, source_rel: Path) -> None:
+    content = source.read_text(encoding="utf-8")
+    source_path = source_rel.as_posix()
+    data = {
+        "source_path": source_path,
+        "content": content,
+    }
+    data_json = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace(
+        "</", "<\\/"
+    )
+    page = "\n".join(
+        [
+            "<!doctype html>",
+            '<html lang="en">',
+            "<head>",
+            '<meta charset="utf-8">',
+            f"<title>{html.escape(source_path)}</title>",
+            "</head>",
+            "<body>",
+            f'<pre id="content">{html.escape(content)}</pre>',
+            f'<script id="data" type="application/json">{data_json}</script>',
+            "</body>",
+            "</html>",
+            "",
+        ]
+    )
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(page, encoding="utf-8")
+
+
 def validate_output(root: Path, output: Path, files: list[Path]) -> None:
     resolved_root = root.resolve()
     resolved_output = output.resolve()
@@ -72,15 +103,29 @@ def validate_output(root: Path, output: Path, files: list[Path]) -> None:
             )
 
 
-def file_entry(root: Path, rel_path: Path) -> dict[str, object]:
-    source = root / rel_path
-    rel = rel_path.as_posix()
+def published_path_for(rel_path: Path) -> Path:
+    if rel_path.suffix == ".txt":
+        return rel_path.with_suffix(".html")
+    return rel_path
+
+
+def file_entry(
+    source: Path,
+    target: Path,
+    source_rel: Path,
+    published_rel: Path,
+) -> dict[str, object]:
+    published = published_rel.as_posix()
     return {
-        "path": rel,
-        "url": BASE_URL + quote(rel, safe="/"),
-        "size": source.stat().st_size,
-        "sha256": sha256(source),
-        "media_type": media_type_for(rel_path),
+        "path": published,
+        "url": BASE_URL + quote(published, safe="/"),
+        "size": target.stat().st_size,
+        "sha256": sha256(target),
+        "media_type": media_type_for(published_rel),
+        "source_path": source_rel.as_posix(),
+        "source_size": source.stat().st_size,
+        "source_sha256": sha256(source),
+        "source_media_type": media_type_for(source_rel),
     }
 
 
@@ -94,8 +139,14 @@ def build_site(root: Path, output: Path) -> dict[str, object]:
 
     entries = []
     for rel_path in files:
-        copy_file(root / rel_path, output / rel_path)
-        entries.append(file_entry(root, rel_path))
+        source = root / rel_path
+        published_rel = published_path_for(rel_path)
+        target = output / published_rel
+        if rel_path.suffix == ".txt":
+            render_text_html(source, target, rel_path)
+        else:
+            copy_file(source, target)
+        entries.append(file_entry(source, target, rel_path, published_rel))
 
     (output / ".nojekyll").write_text("", encoding="utf-8")
 
@@ -113,17 +164,29 @@ def build_site(root: Path, output: Path) -> dict[str, object]:
     (output / "index.json").write_text(manifest_text, encoding="utf-8")
     (output / "manifest.json").write_text(manifest_text, encoding="utf-8")
 
-    lines = [
-        REPOSITORY,
-        BASE_URL,
-        "",
-        "Manifest:",
-        f"{BASE_URL}index.json",
-        "",
-        "Files:",
-    ]
-    lines.extend(entry["url"] for entry in entries)
-    (output / "index.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    links = "\n".join(
+        f'<li><a href="{quote(str(entry["path"]), safe="/")}">'
+        f'{html.escape(str(entry["path"]))}</a></li>'
+        for entry in entries
+    )
+    index_html = "\n".join(
+        [
+            "<!doctype html>",
+            '<html lang="en">',
+            "<head>",
+            '<meta charset="utf-8">',
+            f"<title>{REPOSITORY}</title>",
+            "</head>",
+            "<body>",
+            f"<h1>{REPOSITORY}</h1>",
+            '<p><a href="index.json">index.json</a></p>',
+            f"<ul>{links}</ul>",
+            "</body>",
+            "</html>",
+            "",
+        ]
+    )
+    (output / "index.html").write_text(index_html, encoding="utf-8")
 
     return manifest
 

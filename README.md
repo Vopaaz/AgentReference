@@ -4,11 +4,13 @@ GitHub Pages raw hosting:
 
 - Base URL: <https://vopaaz.github.io/AgentReference/>
 - Manifest: <https://vopaaz.github.io/AgentReference/index.json>
-- Text listing: <https://vopaaz.github.io/AgentReference/index.txt>
-- Example file: <https://vopaaz.github.io/AgentReference/text/rolling_one_year_p5_returns.txt>
+- HTML listing: <https://vopaaz.github.io/AgentReference/index.html>
+- Example generated HTML: <https://vopaaz.github.io/AgentReference/text/rolling_one_year_p5_returns.html>
 
 The Pages artifact is generated from Git-tracked files. Local caches, ignored files,
-and uncommitted temporary files are not published.
+and uncommitted temporary files are not published. Files under `text/*.txt` are
+published as minimal `.html` pages with the original text in `<pre id="content">`
+and JSON in `<script id="data" type="application/json">`.
 
 ## Scripts
 
