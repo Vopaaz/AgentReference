@@ -50,7 +50,7 @@ FIRST_START = add_calendar_years(TODAY, -3) - timedelta(days=1)
 LAST_END = TODAY - timedelta(days=1)
 
 DEFAULT_TICKERS = ("VOO", "QQQ", "SMH", "QTUM")
-DEFAULT_P5_OUTPUT = Path("text") / "rolling_one_year_p5_returns.txt"
+DEFAULT_P5_OUTPUT = Path("text") / "data_rolling_one_year_p5_returns.txt"
 
 
 @dataclass(frozen=True)

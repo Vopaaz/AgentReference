@@ -1,0 +1,5 @@
+code,return_pct
+VOO,8.6765%
+QQQ,7.7613%
+SMH,-4.5969%
+QTUM,17.0268%

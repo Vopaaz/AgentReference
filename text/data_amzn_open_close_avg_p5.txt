@@ -1,2 +1,2 @@
 code,p5_open_close_avg
-AMZN,176.877250
+AMZN,176.854500

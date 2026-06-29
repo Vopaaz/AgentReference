@@ -42,7 +42,7 @@ START_DATE = add_calendar_years(TODAY, -2)
 END_DATE = TODAY - timedelta(days=1)
 TICKER = "AMZN"
 MARKET = "US"
-OUTPUT_PATH = Path("text") / "amzn_open_close_avg_p5.txt"
+OUTPUT_PATH = Path("text") / "data_amzn_open_close_avg_p5.txt"
 
 
 @dataclass(frozen=True)
