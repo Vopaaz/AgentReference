@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Calculate the p5 of AMZN daily open/close averages over a past period of time
+Calculate lower-percentile AMZN daily open/close averages over a past period of time
 using Moomoo OpenD historical daily K-line data.
 
 For each daily K-line:
     open_close_avg = (open + close) / 2
 
-Then p5 is calculated across all daily averages in the requested range.
+Then p5, p15, and p25 are calculated across all daily averages in the requested range.
 """
 
 from __future__ import annotations
@@ -60,6 +60,8 @@ class OpenCloseAverageStats:
     start_date: str
     end_date: str
     p5_average_price: float
+    p15_average_price: float
+    p25_average_price: float
     mean_average_price: float
     median_average_price: float
     trading_days: int
@@ -69,7 +71,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Use Moomoo OpenD historical daily K-line data to calculate "
-            "AMZN p5 of daily (open + close) / 2 over the past 3 years."
+            "AMZN p5/p15/p25 of daily (open + close) / 2 over the past 3 years."
         )
     )
     parser.add_argument(
@@ -206,6 +208,8 @@ def build_stats(code: str, rows: list[DailyOpenCloseAverage]) -> OpenCloseAverag
         start_date=rows[0].trading_date,
         end_date=rows[-1].trading_date,
         p5_average_price=float(series.quantile(0.05)),
+        p15_average_price=float(series.quantile(0.15)),
+        p25_average_price=float(series.quantile(0.25)),
         mean_average_price=float(series.mean()),
         median_average_price=float(series.median()),
         trading_days=len(rows),
@@ -217,17 +221,19 @@ def write_output(path: Path, stats: OpenCloseAverageStats) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
 
     with path.open("w", encoding="utf-8", newline="\n") as output:
-        output.write("code,p5_open_close_avg\n")
+        output.write("code,p5_open_close_avg,p15_open_close_avg,p25_open_close_avg\n")
         output.write(
-            f"{display_code(stats.code)},{stats.p5_average_price:.6f}"
+            f"{display_code(stats.code)},{stats.p5_average_price:.6f},"
+            f"{stats.p15_average_price:.6f},{stats.p25_average_price:.6f}"
         )
 
 
 def print_summary(stats: OpenCloseAverageStats) -> None:
-    print("code      p5_avg     mean_avg   median_avg  range")
-    print("-" * 62)
+    print("code      p5_avg    p15_avg    p25_avg   mean_avg   median_avg  range")
+    print("-" * 86)
     print(
         f"{stats.code:<8} {stats.p5_average_price:>10.2f}  "
+        f"{stats.p15_average_price:>10.2f}  {stats.p25_average_price:>10.2f}  "
         f"{stats.mean_average_price:>10.2f}  {stats.median_average_price:>10.2f}  "
         f"{stats.start_date}->{stats.end_date} ({stats.trading_days} days)"
     )
@@ -269,7 +275,7 @@ def main() -> int:
     stats = build_stats(code, rows)
     print_summary(stats)
     write_output(OUTPUT_PATH, stats)
-    print(f"\nAMZN open/close average p5 written to: {OUTPUT_PATH}")
+    print(f"\nAMZN open/close average percentiles written to: {OUTPUT_PATH}")
 
     return 0
 

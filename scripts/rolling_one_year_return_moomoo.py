@@ -71,6 +71,7 @@ class TickerStats:
     mean_return: float
     median_return: float
     p5_return: float
+    p15_return: float
     p10_return: float
     p25_return: float
     p75_return: float
@@ -139,7 +140,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--p5-output",
         default=str(DEFAULT_P5_OUTPUT),
-        help=f"Path to write p5 results. Default: {DEFAULT_P5_OUTPUT}",
+        help=f"Path to write p5/p15/p25 text results. Default: {DEFAULT_P5_OUTPUT}",
     )
     parser.add_argument(
         "--show-sdk-logs",
@@ -302,6 +303,7 @@ def build_stats(code: str, window_returns: list[WindowReturn], skipped: int, tot
         median_return=float(series.median()),
         p5_return=float(series.quantile(0.05)),
         p10_return=float(series.quantile(0.10)),
+        p15_return=float(series.quantile(0.15)),
         p25_return=float(series.quantile(0.25)),
         p75_return=float(series.quantile(0.75)),
         valid_windows=len(window_returns),
@@ -327,6 +329,8 @@ def write_summary_csv(path: str, stats: list[TickerStats]) -> None:
                 "p5_return_pct",
                 "p10_return",
                 "p10_return_pct",
+                "p15_return",
+                "p15_return_pct",
                 "p25_return",
                 "p25_return_pct",
                 "p75_return",
@@ -357,6 +361,8 @@ def write_summary_csv(path: str, stats: list[TickerStats]) -> None:
                     "p5_return_pct": f"{item.p5_return:.4%}",
                     "p10_return": f"{item.p10_return:.10f}",
                     "p10_return_pct": f"{item.p10_return:.4%}",
+                    "p15_return": f"{item.p15_return:.10f}",
+                    "p15_return_pct": f"{item.p15_return:.4%}",
                     "p25_return": f"{item.p25_return:.10f}",
                     "p25_return_pct": f"{item.p25_return:.4%}",
                     "p75_return": f"{item.p75_return:.10f}",
@@ -411,16 +417,19 @@ def write_p5_text(path: str, stats: list[TickerStats]) -> None:
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
     with output_path.open("w", encoding="utf-8", newline="\n") as output:
-        output.write("code,return_pct\n")
+        output.write("code,p5_return_pct,p15_return_pct,p25_return_pct\n")
         for item in stats:
-            output.write(f"{display_code(item.code)},{item.p5_return:.4%}\n")
+            output.write(
+                f"{display_code(item.code)},{item.p5_return:.4%},"
+                f"{item.p15_return:.4%},{item.p25_return:.4%}\n"
+            )
 
 
 def print_summary(stats: list[TickerStats]) -> None:
     print(
-        "code          min       mean     median        p5       p10       p25       p75  min_window"
+        "code          min       mean     median        p5       p10       p15       p25       p75  min_window"
     )
-    print("-" * 99)
+    print("-" * 110)
     for item in stats:
         worst = item.worst
         window = f"{worst.start_date}->{worst.end_date}"
@@ -430,7 +439,8 @@ def print_summary(stats: list[TickerStats]) -> None:
             f"{item.code:<8} {worst.return_rate:>9.2%}  "
             f"{item.mean_return:>9.2%}  {item.median_return:>9.2%}  "
             f"{item.p5_return:>9.2%}  {item.p10_return:>9.2%}  "
-            f"{item.p25_return:>9.2%}  {item.p75_return:>9.2%}  "
+            f"{item.p15_return:>9.2%}  {item.p25_return:>9.2%}  "
+            f"{item.p75_return:>9.2%}  "
             f"{window}"
         )
     print("* end date was adjusted to the previous valid trading day")
@@ -482,7 +492,7 @@ def main() -> int:
 
     print_summary(stats)
     write_p5_text(args.p5_output, stats)
-    print(f"\nP5 results written to: {args.p5_output}")
+    print(f"\nPercentile results written to: {args.p5_output}")
 
     if args.summary_csv:
         write_summary_csv(args.summary_csv, stats)
