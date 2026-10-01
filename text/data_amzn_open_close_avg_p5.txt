@@ -1,2 +1,2 @@
 code,p5_open_close_avg,p15_open_close_avg,p25_open_close_avg
-AMZN,176.877250,187.110250,199.910000
+AMZN,186.130000,201.365000,208.845000
