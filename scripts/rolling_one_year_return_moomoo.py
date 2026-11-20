@@ -46,7 +46,7 @@ def add_calendar_years(value: date, years: int) -> date:
 
 
 TODAY = date.today()
-FIRST_START = add_calendar_years(TODAY, -3) - timedelta(days=1)
+FIRST_START = add_calendar_years(TODAY, -5) - timedelta(days=1)
 LAST_END = TODAY - timedelta(days=1)
 
 DEFAULT_TICKERS = ("VOO", "QQQ", "SMH", "QTUM")
@@ -126,8 +126,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--port",
         type=int,
-        default=int(os.getenv("MOOMOO_OPEND_PORT", "11111")),
-        help="OpenD quote port. Default: MOOMOO_OPEND_PORT or 11111",
+        default=int(os.getenv("MOOMOO_OPEND_PORT", "21111")),
+        help="OpenD quote port. Default: MOOMOO_OPEND_PORT or 21111",
     )
     parser.add_argument(
         "--summary-csv",

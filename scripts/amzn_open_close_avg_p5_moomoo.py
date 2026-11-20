@@ -38,7 +38,7 @@ def add_calendar_years(value: date, years: int) -> date:
 
 
 TODAY = date.today()
-START_DATE = add_calendar_years(TODAY, -2)
+START_DATE = add_calendar_years(TODAY, -5)
 END_DATE = TODAY - timedelta(days=1)
 TICKER = "AMZN"
 MARKET = "US"
@@ -98,8 +98,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--port",
         type=int,
-        default=int(os.getenv("MOOMOO_OPEND_PORT", "11111")),
-        help="OpenD quote port. Default: MOOMOO_OPEND_PORT or 11111",
+        default=int(os.getenv("MOOMOO_OPEND_PORT", "21111")),
+        help="OpenD quote port. Default: MOOMOO_OPEND_PORT or 21111",
     )
     parser.add_argument(
         "--show-sdk-logs",
